@@ -52,15 +52,53 @@ static size_t
 parse_input(double **inp)
 {
 	unsigned N, i;
+	int r;
 
 	scanf("%u\n", &N);
 	*inp = malloc(sizeof(**inp) * 2 * N);
 	if (*inp == NULL)
 		err(1, "malloc");
-	for (i = 0; i < N; i++)
-		scanf("(%lg, %lg)\n", *inp + i*2, *inp + i*2 + 1);
+	for (i = 0; i < N; i++) {
+		r = scanf("(%lg, %lg)\n", *inp + i*2, *inp + i*2 + 1);
+		if (r != 2)
+			err(1, "scanf");
+	}
 
 	return (N);
+}
+
+static int
+pt_dist_cmp(const akd_userdata_t *k, const akd_userdata_t *a,
+    const akd_userdata_t *b)
+{
+	double da, db;
+
+	da = pt_sdist(k, a);
+	db = pt_sdist(k, b);
+
+	if (da > db)
+		return (1);
+	else if (da == db)
+		return (0);
+	else
+		return (-1);
+}
+
+static int
+pt_dist_acmp(const akd_userdata_t *k, const akd_userdata_t *a, unsigned d,
+    const akd_userdata_t *b)
+{
+	double da, db;
+
+	da = pt_axis_sdist(k, a, d);
+	db = pt_sdist(k, b);
+
+	if (da > db)
+		return (1);
+	else if (da == db)
+		return (0);
+	else
+		return (-1);
 }
 
 #if 0
@@ -90,11 +128,8 @@ main(int argc, char **argv)
 		.ap_size = sizeof(double) * 2,
 		.ap_cmp = pt_cmp,
 		.ap_flags = 0,
-		._u = {
-		._double = {
-			.ap_squared_dist = pt_sdist,
-			.ap_axis_squared_dist = pt_axis_sdist,
-		}},
+		.ap_dist_cmp = pt_dist_cmp,
+		.ap_dist_acmp = pt_dist_acmp,
 	};
 	double bestd = 1./0., d;
 	double bestpts[4];
@@ -136,8 +171,8 @@ main(int argc, char **argv)
 		}
 	}
 
-	printf("(%g,%g) (%g,%g)\n", bestpts[0], bestpts[1], bestpts[2],
-	    bestpts[3]);
+	printf("(%.9lg,%.9lg) (%.9lg,%.9lg)\n", bestpts[0], bestpts[1],
+	    bestpts[2], bestpts[3]);
 
 	return (0);
 }
